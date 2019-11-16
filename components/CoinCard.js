@@ -6,7 +6,11 @@ const screenWidth = Dimensions.get("window").width;
 const CoinCard = props => {
   return (
     <Container>
-      <Logo source={{ uri: props.logo }} />
+      <Logo
+        source={{
+          uri: `https://raw.githubusercontent.com/atomiclabs/cryptocurrency-icons/master/128/icon/${props.symbol.toLowerCase()}.png`
+        }}
+      />
       <Content>
         <Header>
           <Title>
