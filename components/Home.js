@@ -1,44 +1,63 @@
 import axios from "axios";
 import React from "react";
 import {
+  ActivityIndicator,
   FlatList,
   View,
   RefreshControl,
   SafeAreaView,
   ScrollView,
-  StatusBar
+  StatusBar,
+  Text,
+  TouchableOpacity
 } from "react-native";
 import Constants from "expo-constants";
 import Header from "./Header";
 import CoinCard from "./CoinCard";
 
-const apiBaseURL = "https://api.coinmarketcap.com";
+const apiBaseURL = "https://pro-api.coinmarketcap.com";
 
 export default class Home extends React.Component {
   state = {
-    coins: coins,
+    coins: [],
     list: [],
-    refreshing: false
+    refreshing: false,
+    fetching_from_server: false,
+    start: 1,
+    data_count: 5
   };
 
   componentDidMount() {
     this.getRecentData();
   }
 
-  getRecentData = () => {
-    return axios
-      .get(`${apiBaseURL}/v1/ticker/?limit=15`)
-      .then(res => {
-        let temp = [];
-        for (let i = 0; i < 10; i++) {
-          temp[i] = res.data[i];
-        }
-        this.setState({ coins: res.data, refreshing: false, list: temp });
-      })
-      .catch(err => {
-        console.log("Error fetching data : ", err);
-        this.setState({ refreshing: false });
+  getRecentData = async () => {
+    try {
+      let oldData = [...this.state.coins];
+      let { start, data_count } = this.state;
+      const res = await axios({
+        method: "get",
+        url: `${apiBaseURL}/v1/cryptocurrency/listings/latest`,
+        // url: "https://api.coinmarketcap.com/v1/ticker/",
+        params: {
+          start: start,
+          limit: data_count,
+          convert: "USD" //only 1 currency conversion allowed in free plan
+        },
+        headers: {
+          "X-CMC_PRO_API_KEY": `012a8c56-2409-4b83-87b6-d4e1e2ec268e`
+        },
+        json: true
       });
+      this.setState({
+        coins: [...oldData, ...res.data.data],
+        refreshing: false,
+        fetching_from_server: false
+      });
+    } catch (err) {
+      console.log("Error fetching data : ", err.message);
+      this.setState({ refreshing: false, fetching_from_server: false });
+    }
   };
 
   onRefresh = () => {
@@ -47,7 +66,56 @@ export default class Home extends React.Component {
     // setTimeout(() => this.setState({ refreshing: false }), 5000);
   };
 
+  loadMoreData = () => {
+    let { start, data_count } = this.state;
+    this.setState({ fetching_from_server: true, start: start + data_count });
+    this.getRecentData();
+  };
+
+  renderFooter() {
+    return (
+      //Footer View with Load More button
+      <View
+        style={{
+          padding: 10,
+          justifyContent: "center",
+          alignItems: "center",
+          flexDirection: "row"
+        }}
+      >
+        {this.state.fetching_from_server ? (
+          <ActivityIndicator color="blue" style={{ marginLeft: 8 }} />
+        ) : (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={this.loadMoreData}
+            //On Click of button calling loadMoreData function to load more data
+            style={{
+              padding: 10,
+              backgroundColor: "#800000",
+              borderRadius: 4,
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <Text
+              style={{
+                color: "white",
+                fontSize: 15,
+                textAlign: "center"
+              }}
+            >
+              Load More
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  }
+
   render() {
+    console.log(this.state.start);
     return (
       //   <SafeAreaView style={{ marginTop: Constants.statusBarHeight }}>
       <View
@@ -74,15 +142,14 @@ export default class Home extends React.Component {
         >
           <FlatList
             style={{ flex: 1 }}
-            extraData={this.state}
-            onEndReached={() => console.log("Reached End")}
-            onEndReachedThreshold={1}
-            data={this.state.list}
+            // extraData={this.state}
+            data={this.state.coins}
             renderItem={({ item }) => {
               return <CoinCard logo={images[item.symbol]} {...item} />;
             }}
             keyExtractor={(item, index) => index.toString()}
             initialNumToRender={5}
+            ListFooterComponent={this.renderFooter.bind(this)}
           ></FlatList>
         </ScrollView>
       </View>
