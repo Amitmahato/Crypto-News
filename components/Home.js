@@ -14,6 +14,7 @@ import {
 import Constants from "expo-constants";
 import Header from "./Header";
 import CoinCard from "./CoinCard";
+import api_key from "../assets/API-KEY";
 
 const apiBaseURL = "https://pro-api.coinmarketcap.com";
 
@@ -45,7 +46,7 @@ export default class Home extends React.Component {
           convert: "USD" //only 1 currency conversion allowed in free plan
         },
         headers: {
-          "X-CMC_PRO_API_KEY": `012a8c56-2409-4b83-87b6-d4e1e2ec268e`
+          "X-CMC_PRO_API_KEY": api_key
         },
         json: true
       });
