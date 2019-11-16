@@ -2,6 +2,7 @@ import axios from "axios";
 import React from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   View,
   RefreshControl,
@@ -20,26 +21,26 @@ const apiBaseURL = "https://pro-api.coinmarketcap.com";
 
 export default class Home extends React.Component {
   state = {
-    coins: [],
-    list: [],
+    coins: coins,
     refreshing: false,
-    fetching_from_server: false,
+    fetching_more_data: false,
     start: 1,
     data_count: 5
   };
 
   componentDidMount() {
-    this.getRecentData();
+    this.onRefresh();
   }
 
-  getRecentData = async () => {
+  fetchFromServer = async (
+    start = this.state.start,
+    data_count = this.state.data_count
+  ) => {
     try {
-      let oldData = [...this.state.coins];
-      let { start, data_count } = this.state;
       const res = await axios({
         method: "get",
         url: `${apiBaseURL}/v1/cryptocurrency/listings/latest`,
-        // url: "https://api.coinmarketcap.com/v1/ticker/",
+        // url: `https://api.coinmarketcap.com/v1/ticker/?limit=${data_count}`,
         params: {
           start: start,
           limit: data_count,
@@ -50,27 +51,62 @@ export default class Home extends React.Component {
         },
         json: true
       });
-      this.setState({
-        coins: [...oldData, ...res.data.data],
-        refreshing: false,
-        fetching_from_server: false
-      });
+      return res.data.data;
     } catch (err) {
       console.log("Error fetching data : ", err.message);
-      this.setState({ refreshing: false, fetching_from_server: false });
+      this.setState({ refreshing: false, fetching_more_data: false });
+      Alert.alert(
+        "Network Error",
+        "Please check your internet connection and try again!"
+      );
     }
   };
 
-  onRefresh = () => {
-    this.setState({ refreshing: true });
-    this.getRecentData();
-    // setTimeout(() => this.setState({ refreshing: false }), 5000);
+  onRefresh = async () => {
+    try {
+      await this.setState({ refreshing: true });
+      var updatedData = await this.fetchFromServer(
+        (start = 1),
+        (data_count =
+          this.state.start > 1
+            ? this.state.start + this.state.data_count - 1
+            : this.state.data_count) //refresh all the data that have been loaded previously, don't fallback to default number of data
+      );
+      this.setState({
+        refreshing: false,
+        coins: updatedData ? [...updatedData] : []
+      });
+    } catch (err) {
+      console.log("Error Refreshing : ", err.message);
+      this.setState({ refreshing: false });
+    }
   };
 
-  loadMoreData = () => {
-    let { start, data_count } = this.state;
-    this.setState({ fetching_from_server: true, start: start + data_count });
-    this.getRecentData();
+  onLoadMoreData = async () => {
+    try {
+      if (this.state.coins.length > 0) {
+        let oldData = [...this.state.coins];
+        let { start, data_count } = this.state;
+        try {
+          await this.setState({
+            fetching_more_data: true,
+            start: start + data_count
+          });
+          let moreData = await this.fetchFromServer();
+          this.setState({
+            coins: moreData ? [...oldData, ...moreData] : [...oldData],
+            fetching_more_data: false
+          });
+        } catch (err) {
+          console.log("Error Loading More Data : ", err.message);
+          this.setState({ fetching_more_data: false, start: start });
+        }
+      } else {
+        this.onRefresh();
+      }
+    } catch (err) {
+      console.log("Error getting data from state : ", err.message);
+    }
   };
 
   renderFooter() {
@@ -84,13 +120,13 @@ export default class Home extends React.Component {
           flexDirection: "row"
         }}
       >
-        {this.state.fetching_from_server ? (
+        {this.state.fetching_more_data ? (
           <ActivityIndicator color="blue" style={{ marginLeft: 8 }} />
         ) : (
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={this.loadMoreData}
-            //On Click of button calling loadMoreData function to load more data
+            onPress={this.onLoadMoreData}
+            //On Click of button calling onLoadMoreData function to load more data
             style={{
               padding: 10,
               backgroundColor: "#800000",
@@ -116,7 +152,6 @@ export default class Home extends React.Component {
   }
 
   render() {
-    console.log(this.state.start);
     return (
       //   <SafeAreaView style={{ marginTop: Constants.statusBarHeight }}>
       <View
@@ -145,12 +180,12 @@ export default class Home extends React.Component {
             style={{ flex: 1 }}
             // extraData={this.state}
             data={this.state.coins}
-            renderItem={({ item }) => {
-              return <CoinCard logo={images[item.symbol]} {...item} />;
-            }}
+            renderItem={({ item }) => <CoinCard {...item} />}
             keyExtractor={(item, index) => index.toString()}
             initialNumToRender={5}
-            ListFooterComponent={this.renderFooter.bind(this)}
+            ListFooterComponent={() =>
+              this.state.refreshing ? null : this.renderFooter()
+            }
           ></FlatList>
         </ScrollView>
       </View>
@@ -159,124 +194,60 @@ export default class Home extends React.Component {
   }
 }
 
-const images = {
-  BTC:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1508609483/bitcoin_eqld4v.png",
-  ETH:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1508609485/ethereum_nw0chu.png",
-  XRP:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1508609486/ripple_p0xeut.png",
-  BCH:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1516327336/bch_2x_hahroi.png",
-  LTC:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1512427497/ltc_fjbqjf.png",
-  DASH:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1508609484/dash_oltvqi.png",
-  XEM:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1508609486/nem_imprip.png",
-  BCC:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1508609486/bitconnect_oj1bo5.png",
-  XMR:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1508609486/monero_wzk3ur.png",
-  NEO:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1508609486/neo_fvoo6c.png",
-  MIOTA:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1512510148/miota_2x_xkby9u.png",
-  ADA:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1513434489/cardano_unympj.png",
-  BTG:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1513434542/bitcoin-gold_reytam.png",
-  XLM:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1516326886/xlm_2x_jfwlwt.png",
-  ADA:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1516326874/ada_2x_g4fs0c.png",
-  IOTA:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1516327102/miota_2x_zsvtqc.png",
-  TRX:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1516326885/trx_2x_ukhxjm.png",
-  EOS:
-    "https://res.cloudinary.com/da7jhtpgh/image/upload/v1516326878/eos_2x_dvr7p0.png"
-};
-
 const coins = [
   {
-    logo: images.BTC,
     name: "Bitcoin",
     symbol: "BTC",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
+    quote: {
+      USD: {
+        price: "00.00",
+        percent_change_24h: "0.0",
+        percent_change_7d: "0.0"
+      }
+    }
   },
   {
-    logo: images.ETH,
-    name: "Bitcoin",
+    name: "Ethereum",
     symbol: "ETH",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
+    quote: {
+      USD: {
+        price: "00.00",
+        percent_change_24h: "0.0",
+        percent_change_7d: "0.0"
+      }
+    }
   },
   {
-    logo: images.XRP,
-    name: "Bitcoin",
+    name: "XRP",
     symbol: "XRP",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
+    quote: {
+      USD: {
+        price: "00.00",
+        percent_change_24h: "0.0",
+        percent_change_7d: "0.0"
+      }
+    }
   },
   {
-    logo: images.BCH,
-    name: "Bitcoin",
+    name: "Bitcoin Cash",
     symbol: "BCH",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
+    quote: {
+      USD: {
+        price: "00.00",
+        percent_change_24h: "0.0",
+        percent_change_7d: "0.0"
+      }
+    }
   },
   {
-    logo: images.LTC,
-    name: "Bitcoin",
-    symbol: "LTC",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
-  },
-  {
-    logo: images.DASH,
-    name: "Bitcoin",
-    symbol: "DASH",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
-  },
-  {
-    logo: images.XEM,
-    name: "Bitcoin",
-    symbol: "XEM",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
-  },
-  {
-    logo: images.BCC,
-    name: "Bitcoin",
-    symbol: "BCC",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
-  },
-  {
-    logo: images.XMR,
-    name: "Bitcoin",
-    symbol: "XMR",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
-  },
-  {
-    logo: images.NEO,
-    name: "Bitcoin",
-    symbol: "NEO",
-    price_usd: "00.00",
-    percent_change_24h: "0.0",
-    percent_change_7d: "0.0"
+    name: "Tether",
+    symbol: "USDT",
+    quote: {
+      USD: {
+        price: "00.00",
+        percent_change_24h: "0.0",
+        percent_change_7d: "0.0"
+      }
+    }
   }
 ];
