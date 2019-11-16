@@ -13,23 +13,27 @@ const CoinCard = props => {
             <Enum>{props.symbol}</Enum>
             <Name>{props.name}</Name>
           </Title>
-          <Price>{Number(props.price_usd).toFixed(2)}$</Price>
+          <Price>{Number(props.quote.USD.price).toFixed(2)}$</Price>
         </Header>
         <Footer>
           <Daily>
             <Time>24h : </Time>
             <Change24hr
-              style={props.percent_change_24h < 0 ? { color: "#f55" } : {}}
+              style={
+                props.quote.USD.percent_change_24h < 0 ? { color: "#f55" } : {}
+              }
             >
-              {props.percent_change_24h}%
+              {Number(props.quote.USD.percent_change_24h).toFixed(2)}%
             </Change24hr>
           </Daily>
           <Weekly>
             <Time>7d : </Time>
             <Change7d
-              style={props.percent_change_7d < 0 ? { color: "#f55" } : {}}
+              style={
+                props.quote.USD.percent_change_7d < 0 ? { color: "#f55" } : {}
+              }
             >
-              {props.percent_change_7d}%
+              {Number(props.quote.USD.percent_change_7d).toFixed(2)}%
             </Change7d>
           </Weekly>
         </Footer>
