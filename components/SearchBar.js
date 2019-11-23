@@ -7,8 +7,10 @@ const screenWidth = Dimensions.get("window").width;
 
 class SearchBar extends React.Component {
   state = {
+    searchIcon: "ios-search",
     searchText: "",
     searchIconWidth: 50,
+    searchIconSize: 50,
     inputWidth: new Animated.Value(0),
     inputShown: false,
     inputBorder: 0,
@@ -33,9 +35,12 @@ class SearchBar extends React.Component {
     if (inputShown) {
       this.setState({
         inputShown: false,
-        inputBorder: 0
+        inputBorder: 0,
+        searchText: "",
+        searchIcon: "ios-search",
+        searchIconSize: 50
       });
-      Keyboard.dismiss();
+
       Animated.timing(this.state.containerWidth, {
         toValue: 60,
         duration: 0
@@ -43,12 +48,17 @@ class SearchBar extends React.Component {
 
       Animated.timing(this.state.inputWidth, {
         toValue: 0,
-        duration: 100
+        duration: 0
       }).start();
+
+      this.props.onSearch("");
     } else {
       this.setState({
         inputShown: true,
-        inputBorder: 1
+        inputBorder: 1,
+        searchIcon: "ios-close",
+        searchIconSize: 70,
+        inputMarginRight: -10
       });
 
       Animated.timing(this.state.containerWidth, {
@@ -57,7 +67,7 @@ class SearchBar extends React.Component {
       }).start();
 
       Animated.timing(this.state.inputWidth, {
-        toValue: 275,
+        toValue: 280,
         duration: 200
       }).start();
     }
@@ -80,13 +90,13 @@ class SearchBar extends React.Component {
     this.setState({
       containerBottomPosition: 0,
       searchIconWidth: 50,
-      inputMarginRight: 0
+      inputMarginRight: -10,
+      searchIcon: "ios-close"
     });
     Animated.timing(this.state.inputWidth, {
-      toValue: 275,
+      toValue: 280,
       duration: 0
     }).start();
-    // this.toggleSearchInput();
 
     const { searchText } = this.state;
     if (searchText.length == 0) this.props.onSearch("");
@@ -140,7 +150,7 @@ class SearchBar extends React.Component {
               fontSize: 40,
               opacity:
                 this.state.searchText.length > 0 &&
-                this.state.inputMarginRight < 0
+                this.state.inputMarginRight < -20
                   ? 1
                   : 0,
               color: "rgba(0,0,0,0.6)"
@@ -151,22 +161,22 @@ class SearchBar extends React.Component {
           onPress={this.toggleSearchInput}
           style={{
             position: "absolute",
-            right: 10,
-            bottom: 5,
+            right: this.state.searchIcon == "ios-search" ? 0 : -5,
+            bottom: this.state.searchIcon == "ios-search" ? 5 : 16,
             width: this.state.searchIconWidth,
             height: 50
           }}
         >
-          <Ionicons
-            name={"ios-search" || "md-search"}
-            style={{
-              fontSize: 50,
-              color: this.state.inputShown ? "white" : "black"
-            }}
-          />
           <FillIcon
             style={{
               backgroundColor: this.state.inputShown ? "#876" : "white"
+            }}
+          />
+          <Ionicons
+            name={this.state.searchIcon}
+            style={{
+              fontSize: this.state.searchIconSize,
+              color: this.state.inputShown ? "white" : "black"
             }}
           />
         </TouchableOpacity>
