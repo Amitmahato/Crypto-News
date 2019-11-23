@@ -22,7 +22,8 @@ const apiBaseURL = "https://pro-api.coinmarketcap.com";
 
 export default class Home extends React.Component {
   state = {
-    coins: coins,
+    fetchedCoins: coins,
+    displayCoin: coins,
     refreshing: false,
     fetching_more_data: false,
     start: 1,
@@ -75,8 +76,10 @@ export default class Home extends React.Component {
       );
       this.setState({
         refreshing: false,
-        coins: updatedData ? [...updatedData] : []
+        fetchedCoins: updatedData ? [...updatedData] : []
       });
+      const { fetchedCoins } = this.state;
+      this.setState({ displayCoin: fetchedCoins });
     } catch (err) {
       console.log("Error Refreshing : ", err.message);
       this.setState({ refreshing: false });
@@ -85,8 +88,8 @@ export default class Home extends React.Component {
 
   onLoadMoreData = async () => {
     try {
-      if (this.state.coins.length > 0) {
-        let oldData = [...this.state.coins];
+      if (this.state.fetchedCoins.length > 0) {
+        let oldData = [...this.state.fetchedCoins];
         let { start, data_count } = this.state;
         try {
           await this.setState({
@@ -95,7 +98,8 @@ export default class Home extends React.Component {
           });
           let moreData = await this.fetchFromServer();
           this.setState({
-            coins: moreData ? [...oldData, ...moreData] : [...oldData],
+            fetchedCoins: moreData ? [...oldData, ...moreData] : [...oldData],
+            displayCoin: moreData ? [...oldData, ...moreData] : [...oldData],
             fetching_more_data: false
           });
         } catch (err) {
@@ -152,6 +156,27 @@ export default class Home extends React.Component {
     );
   }
 
+  onSearch = async searchText => {
+    searchText = searchText.toLowerCase();
+    const { fetchedCoins } = this.state;
+    try {
+      if (searchText.length > 0) {
+        const searchResult = await fetchedCoins.filter(item => {
+          if (item.name.toLowerCase().search(searchText) > -1) {
+            return item;
+          }
+        });
+        this.setState({
+          displayCoin: searchResult.length > 0 ? searchResult : []
+        });
+      } else {
+        this.setState({ displayCoin: fetchedCoins });
+      }
+    } catch (err) {
+      console.log("Error Searching : ", err.message);
+    }
+  };
+
   render() {
     return (
       //   <SafeAreaView style={{ marginTop: Constants.statusBarHeight }}>
@@ -180,7 +205,7 @@ export default class Home extends React.Component {
           <FlatList
             style={{ flex: 1 }}
             // extraData={this.state}
-            data={this.state.coins}
+            data={this.state.displayCoin}
             renderItem={({ item }) => <CoinCard {...item} />}
             keyExtractor={(item, index) => index.toString()}
             initialNumToRender={5}
@@ -189,7 +214,7 @@ export default class Home extends React.Component {
             }
           ></FlatList>
         </ScrollView>
-        <SearchBar />
+        <SearchBar onSearch={this.onSearch} />
       </View>
       //   </SafeAreaView>
     );
