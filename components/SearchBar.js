@@ -8,9 +8,11 @@ const screenWidth = Dimensions.get("window").width;
 class SearchBar extends React.Component {
   state = {
     searchText: "",
+    searchIconWidth: 50,
     inputWidth: new Animated.Value(0),
     inputShown: false,
     inputBorder: 0,
+    inputMarginRight: 0,
     containerWidth: new Animated.Value(60),
     containerBottomPosition: 0
   };
@@ -31,8 +33,7 @@ class SearchBar extends React.Component {
     if (inputShown) {
       this.setState({
         inputShown: false,
-        inputBorder: 0,
-        searchText: ""
+        inputBorder: 0
       });
       Keyboard.dismiss();
       Animated.timing(this.state.containerWidth, {
@@ -64,12 +65,28 @@ class SearchBar extends React.Component {
 
   KeyboardDidShow = e => {
     const { height } = e.endCoordinates;
-    this.setState({ containerBottomPosition: height });
+    this.setState({
+      containerBottomPosition: height,
+      searchIconWidth: 0,
+      inputMarginRight: -65
+    });
+    Animated.timing(this.state.inputWidth, {
+      toValue: 340,
+      duration: 0
+    }).start();
   };
 
   KeyboardDidHide = () => {
-    this.setState({ containerBottomPosition: 0 });
-    this.toggleSearchInput();
+    this.setState({
+      containerBottomPosition: 0,
+      searchIconWidth: 50,
+      inputMarginRight: 0
+    });
+    Animated.timing(this.state.inputWidth, {
+      toValue: 275,
+      duration: 0
+    }).start();
+    // this.toggleSearchInput();
 
     const { searchText } = this.state;
     if (searchText.length == 0) this.props.onSearch("");
@@ -96,7 +113,8 @@ class SearchBar extends React.Component {
             borderWidth: this.state.inputBorder,
             fontSize: 20,
             padding: this.state.inputShown ? 10 : 0,
-            paddingRight: this.state.inputShown ? 40 : 0
+            paddingRight: this.state.inputShown ? 40 : 0,
+            marginRight: this.state.inputMarginRight
           }}
           onPress={this.KeyboardDidShow}
           returnKeyType="search"
@@ -111,7 +129,7 @@ class SearchBar extends React.Component {
         <TouchableOpacity
           style={{
             position: "absolute",
-            right: 90,
+            right: 25,
             bottom: 10
           }}
           onPress={this.clearInput}
@@ -120,7 +138,11 @@ class SearchBar extends React.Component {
             name="ios-close"
             style={{
               fontSize: 40,
-              opacity: this.state.searchText.length > 0 ? 1 : 0,
+              opacity:
+                this.state.searchText.length > 0 &&
+                this.state.inputMarginRight < 0
+                  ? 1
+                  : 0,
               color: "rgba(0,0,0,0.6)"
             }}
           />
@@ -131,7 +153,7 @@ class SearchBar extends React.Component {
             position: "absolute",
             right: 10,
             bottom: 5,
-            width: 50,
+            width: this.state.searchIconWidth,
             height: 50
           }}
         >
