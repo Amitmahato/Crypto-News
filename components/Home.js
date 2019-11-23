@@ -16,6 +16,7 @@ import Constants from "expo-constants";
 import Header from "./Header";
 import CoinCard from "./CoinCard";
 import api_key from "../assets/API-KEY";
+import SearchBar from "./SearchBar";
 
 const apiBaseURL = "https://pro-api.coinmarketcap.com";
 
@@ -188,6 +189,7 @@ export default class Home extends React.Component {
             }
           ></FlatList>
         </ScrollView>
+        <SearchBar />
       </View>
       //   </SafeAreaView>
     );
