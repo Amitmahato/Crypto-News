@@ -162,7 +162,10 @@ export default class Home extends React.Component {
     try {
       if (searchText.length > 0) {
         const searchResult = await fetchedCoins.filter(item => {
-          if (item.name.toLowerCase().search(searchText) > -1) {
+          if (
+            item.name.toLowerCase().search(searchText) > -1 ||
+            item.symbol.toLowerCase().search(searchText) > -1
+          ) {
             return item;
           }
         });
