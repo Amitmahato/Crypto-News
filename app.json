@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "CryptVal",
-    "slug": "Crypto",
+    "name": "Crypto News",
+    "slug": "Crypto-News",
     "privacy": "public",
     "sdkVersion": "35.0.0",
     "platforms": ["ios", "android", "web"],
