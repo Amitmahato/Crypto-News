@@ -22,6 +22,7 @@ const apiBaseURL = "https://pro-api.coinmarketcap.com";
 
 export default class Home extends React.Component {
   state = {
+    searchText: "",
     fetchedCoins: coins,
     displayCoin: coins,
     refreshing: false,
@@ -78,8 +79,10 @@ export default class Home extends React.Component {
         refreshing: false,
         fetchedCoins: updatedData ? [...updatedData] : []
       });
-      const { fetchedCoins } = this.state;
-      this.setState({ displayCoin: fetchedCoins });
+      const { fetchedCoins, searchText } = this.state;
+      searchText.length > 0
+        ? this.onSearch(searchText)
+        : this.setState({ displayCoin: fetchedCoins });
     } catch (err) {
       console.log("Error Refreshing : ", err.message);
       this.setState({ refreshing: false });
@@ -90,7 +93,7 @@ export default class Home extends React.Component {
     try {
       if (this.state.fetchedCoins.length > 0) {
         let oldData = [...this.state.fetchedCoins];
-        let { start, data_count } = this.state;
+        let { start, data_count, searchText } = this.state;
         try {
           await this.setState({
             fetching_more_data: true,
@@ -102,6 +105,7 @@ export default class Home extends React.Component {
             displayCoin: moreData ? [...oldData, ...moreData] : [...oldData],
             fetching_more_data: false
           });
+          this.onSearch(searchText);
         } catch (err) {
           console.log("Error Loading More Data : ", err.message);
           this.setState({ fetching_more_data: false, start: start });
@@ -157,6 +161,7 @@ export default class Home extends React.Component {
   }
 
   onSearch = async searchText => {
+    this.setState({ searchText });
     searchText = searchText.toLowerCase();
     const { fetchedCoins } = this.state;
     try {
@@ -202,6 +207,7 @@ export default class Home extends React.Component {
               refreshing={this.state.refreshing}
               onRefresh={this.onRefresh}
               colors={["green"]}
+              marginBottom={this.state.searchText.length > 0 ? 60 : 0}
             />
           }
         >
