@@ -29,10 +29,10 @@ class SearchBar extends React.Component {
   toggleSearchInput = () => {
     const { inputShown } = this.state;
     if (inputShown) {
-      console.log("Hide");
       this.setState({
         inputShown: false,
-        inputBorder: 0
+        inputBorder: 0,
+        searchText: ""
       });
       Keyboard.dismiss();
       Animated.timing(this.state.containerWidth, {
@@ -45,7 +45,6 @@ class SearchBar extends React.Component {
         duration: 100
       }).start();
     } else {
-      console.log("Show");
       this.setState({
         inputShown: true,
         inputBorder: 1
@@ -70,7 +69,18 @@ class SearchBar extends React.Component {
 
   KeyboardDidHide = () => {
     this.setState({ containerBottomPosition: 0 });
+    this.toggleSearchInput();
+
+    const { searchText } = this.state;
+    if (searchText.length == 0) this.props.onSearch("");
   };
+
+  clearInput = () => {
+    this.setState({ searchText: "" });
+    this.props.onSearch("");
+    // this.toggleSearchInput();
+  };
+
   render() {
     return (
       <AnimatedContainer
@@ -85,18 +95,36 @@ class SearchBar extends React.Component {
             width: this.state.inputWidth,
             borderWidth: this.state.inputBorder,
             fontSize: 20,
-            padding: this.state.inputShown ? 10 : 0
+            padding: this.state.inputShown ? 10 : 0,
+            paddingRight: this.state.inputShown ? 40 : 0
           }}
           onPress={this.KeyboardDidShow}
           returnKeyType="search"
           onChangeText={input => {
             this.setState({ searchText: input });
+            this.props.onSearch(input);
           }}
           placeholder="Search..."
-          onSubmitEditing={() => {
-            console.log(this.state.searchText);
-          }}
+          value={this.state.searchText}
+          onSubmitEditing={() => this.props.onSearch(this.state.searchText)}
         />
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            right: 90,
+            bottom: 10
+          }}
+          onPress={this.clearInput}
+        >
+          <Ionicons
+            name="ios-close"
+            style={{
+              fontSize: 40,
+              opacity: this.state.searchText.length > 0 ? 1 : 0,
+              color: "rgba(0,0,0,0.6)"
+            }}
+          />
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={this.toggleSearchInput}
           style={{
